@@ -67,10 +67,18 @@ We welcome contributions! Each tool maintains its own development guidelines in 
 
 ## Future Tools (Planned)
 
-- **Prolog-JSON Bridge**: Enhanced JSON parsing and generation
-- **Prolog-HTTP Client**: HTTP client library with REST API support  
-- **Prolog-Config**: Configuration file management
-- **Prolog-Logging**: Structured logging utilities
+- **Logic-Based Data Validator**: Define Prolog rules to check for inconsistencies or violations in data.
+- **Knowledge Graph Extractor**: Convert relational data into Prolog facts to build a reasoning layer
+- **Semantic Personal Knowledge Base**: A personal knowledge management system (like Obsidian or Logseq) that stores notes as a knowledge graph and uses Prolog for querying and reasoning.
+    - Features: Natural language to Prolog rule generation, timeline reasoning, goal tracking.
+    - Cool twist: Add a chatbot interface that answers questions using Prolog queries.
+- **Bioinformatics Reasoner**: Build a Prolog-based reasoning engine over biomedical ontologies (e.g., Gene Ontology, SNOMED CT).
+    - Use case: Infer gene-disease relationships or drug interactions.
+    - Integration: Use SPARQL to pull data from public bio-ontologies.
+- **Interactive Digital Logic Simulator with Prolog Backend**: A web-based tool where users can draw digital circuits (AND, OR, NOT, XOR, etc.), and the logic is evaluated using Prolog rules.
+    - Frontend: Drag-and-drop circuit builder (e.g., using SVG or canvas).
+    - Backend: Prolog engine that evaluates the circuit logic and propagates signals.
+    - Features: Step-by-step signal propagation, Truth table generation, Circuit minimization suggestions, Export to Verilog or VHDL
 
 ## License
 
