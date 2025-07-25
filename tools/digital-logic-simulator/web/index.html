@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Logic Circuit Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .gate-palette {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .gate-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: grab;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .gate-item:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .gate-item:active {
+            cursor: grabbing;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #circuit-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .properties-panel {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .simulation-controls {
+            margin-bottom: 20px;
+        }
+
+        .input-controls {
+            margin-bottom: 15px;
+        }
+
+        .input-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.on {
+            background: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.on::after {
+            transform: translateX(25px);
+        }
+
+        .output-display {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .output-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .led {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ccc;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+
+        .led.on {
+            background: #ff4444;
+            box-shadow: 0 0 10px #ff4444;
+        }
+
+        .truth-table {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+        }
+
+        .truth-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .truth-table th,
+        .truth-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .truth-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .gate-svg {
+            width: 60px;
+            height: 40px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar, .properties-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔌 Digital Logic Circuit Designer</h1>
+        <div class="toolbar">
+            <button class="btn" onclick="newCircuit()">New</button>
+            <button class="btn" onclick="saveCircuit()">Save</button>
+            <button class="btn" onclick="loadCircuit()">Load</button>
+            <button class="btn" onclick="showTruthTable()">Truth Table</button>
+            <button class="btn" onclick="exportCircuit()">Export</button>
+            <button class="btn" onclick="optimizeCircuit()">Optimize</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <h3>Logic Gates</h3>
+            <div class="gate-palette">
+                <div class="gate-item" draggable="true" data-gate-type="and">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M10,10 L30,10 Q50,10 50,20 Q50,30 30,30 L10,30 Z" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <text x="25" y="25" text-anchor="middle" fill="white" font-size="10">AND</text>
+                    </svg>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="or">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M10,10 Q30,10 50,20 Q30,30 10,30 Q20,20 10,10" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <text x="25" y="25" text-anchor="middle" fill="white" font-size="10">OR</text>
+                    </svg>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="not">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M10,10 L40,20 L10,30 Z" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <circle cx="45" cy="20" r="3" fill="none" stroke="#333" stroke-width="2"/>
+                        <text x="25" y="25" text-anchor="middle" fill="white" font-size="8">NOT</text>
+                    </svg>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="nand">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M10,10 L30,10 Q45,10 45,20 Q45,30 30,30 L10,30 Z" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <circle cx="48" cy="20" r="3" fill="none" stroke="#333" stroke-width="2"/>
+                        <text x="25" y="25" text-anchor="middle" fill="white" font-size="8">NAND</text>
+                    </svg>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="nor">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M10,10 Q25,10 45,20 Q25,30 10,30 Q20,20 10,10" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <circle cx="48" cy="20" r="3" fill="none" stroke="#333" stroke-width="2"/>
+                        <text x="25" y="25" text-anchor="middle" fill="white" font-size="9">NOR</text>
+                    </svg>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="xor">
+                    <svg class="gate-svg" viewBox="0 0 60 40">
+                        <path d="M15,10 Q30,10 50,20 Q30,30 15,30 Q25,20 15,10" fill="#667eea" stroke="#333" stroke-width="2"/>
+                        <path d="M10,10 Q20,20 10,30" fill="none" stroke="#333" stroke-width="2"/>
+                        <text x="27" y="25" text-anchor="middle" fill="white" font-size="9">XOR</text>
+                    </svg>
+                </div>
+            </div>
+
+            <h3>Components</h3>
+            <div class="gate-palette">
+                <div class="gate-item" draggable="true" data-gate-type="input">
+                    <div style="font-size: 12px;">INPUT</div>
+                </div>
+                <div class="gate-item" draggable="true" data-gate-type="output">
+                    <div style="font-size: 12px;">OUTPUT</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="circuit-canvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="properties-panel">
+            <h3>Simulation</h3>
+            <div class="simulation-controls">
+                <button class="btn" onclick="simulateCircuit()" style="width: 100%; margin-bottom: 10px;">
+                    ▶️ Simulate
+                </button>
+                <button class="btn" onclick="stepSimulation()" style="width: 100%; margin-bottom: 10px;">
+                    ⏭️ Step
+                </button>
+                <button class="btn" onclick="resetSimulation()" style="width: 100%;">
+                    🔄 Reset
+                </button>
+            </div>
+
+            <h3>Inputs</h3>
+            <div class="input-controls" id="input-controls">
+                <div class="input-control">
+                    <span>A</span>
+                    <div class="toggle-switch" onclick="toggleInput('A')"></div>
+                </div>
+                <div class="input-control">
+                    <span>B</span>
+                    <div class="toggle-switch" onclick="toggleInput('B')"></div>
+                </div>
+            </div>
+
+            <h3>Outputs</h3>
+            <div class="output-display" id="output-display">
+                <div class="output-item">
+                    <span>Y</span>
+                    <div class="led"></div>
+                </div>
+            </div>
+
+            <h3>Properties</h3>
+            <div id="selected-properties">
+                <p style="color: #666; text-align: center;">Select a component to view properties</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="status-text">Ready - Drag gates from the palette to design your circuit</span>
+        <span id="circuit-info">Gates: 0 | Connections: 0</span>
+    </div>
+
+    <!-- Truth Table Modal -->
+    <div id="truth-table-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTruthTable()">&times;</span>
+            <h2>Truth Table</h2>
+            <div class="truth-table" id="truth-table-content">
+                <!-- Truth table will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeExportModal()">&times;</span>
+            <h2>Export Circuit</h2>
+            <div class="export-options">
+                <button class="btn" onclick="exportFormat('verilog')">Verilog</button>
+                <button class="btn" onclick="exportFormat('vhdl')">VHDL</button>
+                <button class="btn" onclick="exportFormat('json')">JSON</button>
+            </div>
+            <textarea id="export-content" style="width: 100%; height: 300px; margin-top: 15px;" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas, ctx;
+        let currentCircuitId = null;
+        let gates = [];
+        let connections = [];
+        let selectedGate = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let inputs = { A: 0, B: 0 };
+
+        // Initialize the application
+        window.addEventListener('load', () => {
+            canvas = document.getElementById('circuit-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Create initial circuit
+            newCircuit();
+            
+            // Initial render
+            renderCircuit();
+        });
+
+        function setupEventListeners() {
+            // Canvas events
+            canvas.addEventListener('mousedown', onCanvasMouseDown);
+            canvas.addEventListener('mousemove', onCanvasMouseMove);
+            canvas.addEventListener('mouseup', onCanvasMouseUp);
+            canvas.addEventListener('click', onCanvasClick);
+
+            // Drag and drop from palette
+            document.querySelectorAll('.gate-item').forEach(item => {
+                item.addEventListener('dragstart', onGateDragStart);
+            });
+
+            canvas.addEventListener('dragover', onCanvasDragOver);
+            canvas.addEventListener('drop', onCanvasDrop);
+
+            // Window resize
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function onGateDragStart(event) {
+            event.dataTransfer.setData('text/plain', event.target.dataset.gateType);
+        }
+
+        function onCanvasDragOver(event) {
+            event.preventDefault();
+        }
+
+        function onCanvasDrop(event) {
+            event.preventDefault();
+            const gateType = event.dataTransfer.getData('text/plain');
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            addGateToCanvas(gateType, x, y);
+        }
+
+        function addGateToCanvas(gateType, x, y) {
+            const gate = {
+                id: generateId(),
+                type: gateType,
+                x: x,
+                y: y,
+                inputs: gateType === 'not' ? [''] : ['', ''],
+                output: '',
+                value: 0
+            };
+
+            gates.push(gate);
+            renderCircuit();
+            updateStatus();
+        }
+
+        function onCanvasMouseDown(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Check if clicking on a gate
+            const clickedGate = findGateAt(x, y);
+            if (clickedGate) {
+                selectedGate = clickedGate;
+                isDragging = true;
+                dragOffset.x = x - clickedGate.x;
+                dragOffset.y = y - clickedGate.y;
+                showGateProperties(clickedGate);
+            } else {
+                selectedGate = null;
+                hideGateProperties();
+            }
+            
+            renderCircuit();
+        }
+
+        function onCanvasMouseMove(event) {
+            if (isDragging && selectedGate) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                selectedGate.x = x - dragOffset.x;
+                selectedGate.y = y - dragOffset.y;
+                
+                renderCircuit();
+            }
+        }
+
+        function onCanvasMouseUp(event) {
+            isDragging = false;
+        }
+
+        function onCanvasClick(event) {
+            // Handle connection creation
+            // This would be implemented for connecting gates
+        }
+
+        function findGateAt(x, y) {
+            for (let gate of gates) {
+                if (x >= gate.x - 30 && x <= gate.x + 30 && 
+                    y >= gate.y - 20 && y <= gate.y + 20) {
+                    return gate;
+                }
+            }
+            return null;
+        }
+
+        function renderCircuit() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            drawGrid();
+            
+            // Draw connections
+            drawConnections();
+            
+            // Draw gates
+            drawGates();
+            
+            // Highlight selected gate
+            if (selectedGate) {
+                highlightGate(selectedGate);
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            
+            // Vertical lines
+            for (let x = 0; x < canvas.width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y < canvas.height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawConnections() {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            connections.forEach(conn => {
+                ctx.beginPath();
+                ctx.moveTo(conn.fromX, conn.fromY);
+                ctx.lineTo(conn.toX, conn.toY);
+                ctx.stroke();
+            });
+        }
+
+        function drawGates() {
+            gates.forEach(gate => {
+                drawGate(gate);
+            });
+        }
+
+        function drawGate(gate) {
+            ctx.save();
+            ctx.translate(gate.x, gate.y);
+            
+            // Set colors based on gate value
+            const fillColor = gate.value ? '#ff6b6b' : '#667eea';
+            const strokeColor = '#333';
+            
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+
+            switch (gate.type) {
+                case 'and':
+                    drawAndGate();
+                    break;
+                case 'or':
+                    drawOrGate();
+                    break;
+                case 'not':
+                    drawNotGate();
+                    break;
+                case 'nand':
+                    drawNandGate();
+                    break;
+                case 'nor':
+                    drawNorGate();
+                    break;
+                case 'xor':
+                    drawXorGate();
+                    break;
+                case 'input':
+                    drawInputNode();
+                    break;
+                case 'output':
+                    drawOutputNode();
+                    break;
+            }
+            
+            // Draw gate label
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(gate.type.toUpperCase(), 0, 5);
+            
+            ctx.restore();
+        }
+
+        function drawAndGate() {
+            ctx.beginPath();
+            ctx.rect(-25, -15, 35, 30);
+            ctx.arc(10, 0, 15, -Math.PI/2, Math.PI/2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawOrGate() {
+            ctx.beginPath();
+            ctx.moveTo(-25, -15);
+            ctx.quadraticCurveTo(0, -15, 25, 0);
+            ctx.quadraticCurveTo(0, 15, -25, 15);
+            ctx.quadraticCurveTo(-15, 0, -25, -15);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawNotGate() {
+            ctx.beginPath();
+            ctx.moveTo(-20, -15);
+            ctx.lineTo(15, 0);
+            ctx.lineTo(-20, 15);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw inversion bubble
+            ctx.beginPath();
+            ctx.arc(20, 0, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawNandGate() {
+            drawAndGate();
+            // Add inversion bubble
+            ctx.beginPath();
+            ctx.arc(30, 0, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawNorGate() {
+            drawOrGate();
+            // Add inversion bubble
+            ctx.beginPath();
+            ctx.arc(30, 0, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawXorGate() {
+            drawOrGate();
+            // Add extra curve
+            ctx.beginPath();
+            ctx.moveTo(-30, -15);
+            ctx.quadraticCurveTo(-20, 0, -30, 15);
+            ctx.stroke();
+        }
+
+        function drawInputNode() {
+            ctx.beginPath();
+            ctx.rect(-15, -10, 30, 20);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawOutputNode() {
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function highlightGate(gate) {
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(gate.x - 35, gate.y - 25, 70, 50);
+        }
+
+        function showGateProperties(gate) {
+            const propertiesDiv = document.getElementById('selected-properties');
+            propertiesDiv.innerHTML = `
+                <h4>${gate.type.toUpperCase()} Gate</h4>
+                <p><strong>ID:</strong> ${gate.id}</p>
+                <p><strong>Position:</strong> (${Math.round(gate.x)}, ${Math.round(gate.y)})</p>
+                <p><strong>Value:</strong> ${gate.value}</p>
+                <button class="btn" onclick="deleteGate('${gate.id}')" style="background: #ff6b6b; margin-top: 10px;">Delete</button>
+            `;
+        }
+
+        function hideGateProperties() {
+            const propertiesDiv = document.getElementById('selected-properties');
+            propertiesDiv.innerHTML = '<p style="color: #666; text-align: center;">Select a component to view properties</p>';
+        }
+
+        // Circuit operations
+        async function newCircuit() {
+            try {
+                const response = await fetch('/api/create_circuit', { method: 'POST' });
+                const data = await response.json();
+                currentCircuitId = data.circuit_id;
+                gates = [];
+                connections = [];
+                selectedGate = null;
+                renderCircuit();
+                updateStatus('New circuit created');
+            } catch (error) {
+                console.error('Error creating circuit:', error);
+                updateStatus('Error creating circuit');
+            }
+        }
+
+        async function simulateCircuit() {
+            if (!currentCircuitId) return;
+            
+            try {
+                const response = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        circuit_id: currentCircuitId,
+                        inputs: inputs 
+                    })
+                });
+                
+                const data = await response.json();
+                updateOutputDisplay(data.results);
+                updateStatus('Simulation completed');
+            } catch (error) {
+                console.error('Error simulating circuit:', error);
+                updateStatus('Simulation error');
+            }
+        }
+
+        function toggleInput(inputName) {
+            inputs[inputName] = inputs[inputName] ? 0 : 1;
+            
+            // Update UI
+            const toggles = document.querySelectorAll('.toggle-switch');
+            toggles.forEach(toggle => {
+                const control = toggle.parentElement;
+                const name = control.querySelector('span').textContent;
+                if (name === inputName) {
+                    toggle.classList.toggle('on', inputs[inputName]);
+                }
+            });
+            
+            // Auto-simulate if enabled
+            simulateCircuit();
+        }
+
+        function updateOutputDisplay(results) {
+            const outputDiv = document.getElementById('output-display');
+            outputDiv.innerHTML = '';
+            
+            results.forEach(output => {
+                const outputItem = document.createElement('div');
+                outputItem.className = 'output-item';
+                outputItem.innerHTML = `
+                    <span>${output.name}</span>
+                    <div class="led ${output.value ? 'on' : ''}"></div>
+                `;
+                outputDiv.appendChild(outputItem);
+            });
+        }
+
+        async function showTruthTable() {
+            if (!currentCircuitId) return;
+            
+            try {
+                const response = await fetch('/api/truth_table', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ circuit_id: currentCircuitId })
+                });
+                
+                const data = await response.json();
+                displayTruthTable(data.truth_table);
+                document.getElementById('truth-table-modal').style.display = 'block';
+            } catch (error) {
+                console.error('Error generating truth table:', error);
+            }
+        }
+
+        function displayTruthTable(truthTable) {
+            const content = document.getElementById('truth-table-content');
+            
+            if (!truthTable || !truthTable.rows || truthTable.rows.length === 0) {
+                content.innerHTML = '<p>No data to display. Add inputs and outputs to your circuit.</p>';
+                return;
+            }
+            
+            let html = '<table><thead><tr>';
+            
+            // Input headers
+            truthTable.input_names.forEach(name => {
+                html += `<th>${name}</th>`;
+            });
+            
+            // Output headers
+            truthTable.output_names.forEach(name => {
+                html += `<th>${name}</th>`;
+            });
+            
+            html += '</tr></thead><tbody>';
+            
+            // Rows
+            truthTable.rows.forEach(row => {
+                html += '<tr>';
+                row.inputs.forEach(value => {
+                    html += `<td>${value}</td>`;
+                });
+                row.outputs.forEach(value => {
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            content.innerHTML = html;
+        }
+
+        function closeTruthTable() {
+            document.getElementById('truth-table-modal').style.display = 'none';
+        }
+
+        function exportCircuit() {
+            document.getElementById('export-modal').style.display = 'block';
+        }
+
+        async function exportFormat(format) {
+            if (!currentCircuitId) return;
+            
+            try {
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        circuit_id: currentCircuitId,
+                        format: format 
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('export-content').value = data.content;
+            } catch (error) {
+                console.error('Error exporting circuit:', error);
+            }
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').style.display = 'none';
+        }
+
+        function deleteGate(gateId) {
+            gates = gates.filter(gate => gate.id !== gateId);
+            selectedGate = null;
+            hideGateProperties();
+            renderCircuit();
+            updateStatus();
+        }
+
+        function updateStatus(message = null) {
+            const statusText = document.getElementById('status-text');
+            const circuitInfo = document.getElementById('circuit-info');
+            
+            if (message) {
+                statusText.textContent = message;
+            }
+            
+            circuitInfo.textContent = `Gates: ${gates.length} | Connections: ${connections.length}`;
+        }
+
+        function generateId() {
+            return 'gate_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            renderCircuit();
+        }
+
+        // Additional functions for circuit operations
+        function stepSimulation() {
+            // Implement step-by-step simulation
+            updateStatus('Step simulation not yet implemented');
+        }
+
+        function resetSimulation() {
+            // Reset all values
+            gates.forEach(gate => gate.value = 0);
+            Object.keys(inputs).forEach(key => inputs[key] = 0);
+            
+            // Update UI
+            document.querySelectorAll('.toggle-switch').forEach(toggle => {
+                toggle.classList.remove('on');
+            });
+            
+            renderCircuit();
+            updateStatus('Simulation reset');
+        }
+
+        function saveCircuit() {
+            // Implement circuit saving
+            updateStatus('Save functionality not yet implemented');
+        }
+
+        function loadCircuit() {
+            // Implement circuit loading
+            updateStatus('Load functionality not yet implemented');
+        }
+
+        function optimizeCircuit() {
+            // Implement circuit optimization
+            updateStatus('Optimization not yet implemented');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Knowledge Base - Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 80%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: white;
+            color: #333;
+            margin-right: auto;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 5px;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .suggestions {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            overflow-x: auto;
+            background: #f8f9fa;
+        }
+
+        .suggestion {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .suggestion:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-size: 18px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            color: #555;
+        }
+
+        .feature-list li:before {
+            content: "✨ ";
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            🧠 Semantic Knowledge Base Assistant
+        </div>
+        
+        <div class="suggestions">
+            <div class="suggestion" onclick="sendSuggestion('Show me my recent notes')">Recent Notes</div>
+            <div class="suggestion" onclick="sendSuggestion('What are my most used tags?')">Popular Tags</div>
+            <div class="suggestion" onclick="sendSuggestion('Find notes about machine learning')">Search Notes</div>
+            <div class="suggestion" onclick="sendSuggestion('Show my goal progress')">Goal Progress</div>
+            <div class="suggestion" onclick="sendSuggestion('Generate insights from my knowledge base')">Insights</div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h3>Welcome to your Personal Knowledge Base! 🎉</h3>
+                <p>I can help you explore your notes, track goals, and discover insights from your knowledge graph.</p>
+                <ul class="feature-list">
+                    <li>Search through your notes semantically</li>
+                    <li>Track goals and project progress</li>
+                    <li>Find connections between ideas</li>
+                    <li>Generate insights from your data</li>
+                    <li>Timeline-based exploration</li>
+                </ul>
+                <p><strong>Try asking me something like:</strong><br>
+                "Show me notes about artificial intelligence" or "What did I write last week?"</p>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            🤖 Thinking...
+        </div>
+
+        <div class="input-container">
+            <input type="text" 
+                   class="input-field" 
+                   id="messageInput" 
+                   placeholder="Ask me about your knowledge base..."
+                   onkeypress="handleKeyPress(event)">
+            <button class="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendSuggestion(text) {
+            messageInput.value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                // Send message to backend
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: message })
+                });
+
+                const data = await response.json();
+                
+                // Hide typing indicator and add bot response
+                hideTypingIndicator();
+                addMessage(data.answer, 'bot');
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                console.error('Error:', error);
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            if (sender === 'bot') {
+                // Format bot messages with better styling
+                messageDiv.innerHTML = formatBotMessage(text);
+            } else {
+                messageDiv.textContent = text;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function formatBotMessage(text) {
+            // Basic formatting for better readability
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Focus input field on page load
+        window.addEventListener('load', () => {
+            messageInput.focus();
+        });
+
+        // Add some sample data on first load (for demo purposes)
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('firstVisit') !== 'false') {
+                setTimeout(() => {
+                    addMessage("Hi! I've detected this is your first visit. Would you like me to create some sample notes to demonstrate the system?", 'bot');
+                }, 1000);
+                localStorage.setItem('firstVisit', 'false');
+            }
+        });
+    </script>
+</body>
+</html>

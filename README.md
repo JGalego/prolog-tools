@@ -15,6 +15,56 @@ A library that allows querying SQL databases as if they were Prolog facts, provi
 - Connection Pooling and management
 - Type Mapping between SQL and Prolog data types
 
+### ✅ [Logic-Based Data Validator](tools/logic-data-validator/)
+Define Prolog rules to check for inconsistencies or violations in complex data structures with customizable validation rules.
+
+**Features:**
+- Custom validation rule definitions
+- Complex constraint checking
+- Hierarchical data validation
+- Business logic enforcement
+- Report generation and violation tracking
+
+### 🧠 [Knowledge Graph Extractor](tools/knowledge-graph-extractor/)
+Convert relational data into Prolog facts to build a reasoning layer for knowledge discovery and inference.
+
+**Features:**
+- Automatic knowledge graph generation
+- Entity relationship extraction
+- Ontology mapping and alignment
+- SPARQL endpoint integration
+- Semantic reasoning capabilities
+
+### 📚 [Semantic Knowledge Base](tools/semantic-knowledge-base/)
+A personal knowledge management system that stores notes as a knowledge graph and uses Prolog for querying and reasoning.
+
+**Features:**
+- Natural language to Prolog rule generation
+- Timeline reasoning and goal tracking
+- Chatbot interface for knowledge queries
+- Note linking and semantic search
+- Export to various knowledge formats
+
+### 🧬 [Bioinformatics Reasoner](tools/bioinformatics-reasoner/)
+A Prolog-based reasoning engine over biomedical ontologies for inferring gene-disease relationships, drug interactions, and other biomedical knowledge.
+
+**Features:**
+- Gene Ontology integration
+- Drug interaction analysis
+- Pathway enrichment analysis
+- Variant impact assessment
+- SPARQL queries for bio-ontologies
+
+### ⚡ [Digital Logic Simulator](tools/digital-logic-simulator/)
+An interactive web-based tool for designing and simulating digital circuits using Prolog for logic evaluation.
+
+**Features:**
+- Drag-and-drop circuit builder
+- Real-time logic simulation
+- Truth table generation
+- Circuit optimization suggestions
+- Export to hardware description languages
+
 **Quick Example:**
 ```prolog
 % Connect and query database as Prolog facts
@@ -51,7 +101,12 @@ Each tool has its own directory under `tools/` with complete documentation, exam
 ```
 prolog-sql-tools/
 ├── tools/
-│   └── prolog-sql-bridge/      # SQL database integration
+│   ├── prolog-sql-bridge/      # SQL database integration
+│   ├── logic-data-validator/   # Data validation with Prolog rules
+│   ├── knowledge-graph-extractor/ # Knowledge graph generation
+│   ├── semantic-knowledge-base/ # Personal knowledge management
+│   ├── bioinformatics-reasoner/ # Biomedical knowledge inference
+│   └── digital-logic-simulator/ # Digital circuit simulation
 │       ├── src/                # Core library modules
 │       ├── examples/           # Usage examples
 │       ├── tests/              # Test suites
@@ -65,20 +120,15 @@ prolog-sql-tools/
 
 We welcome contributions! Each tool maintains its own development guidelines in its respective directory.
 
-## Future Tools (Planned)
+## Getting Help
 
-- **Logic-Based Data Validator**: Define Prolog rules to check for inconsistencies or violations in data.
-- **Knowledge Graph Extractor**: Convert relational data into Prolog facts to build a reasoning layer
-- **Semantic Personal Knowledge Base**: A personal knowledge management system (like Obsidian or Logseq) that stores notes as a knowledge graph and uses Prolog for querying and reasoning.
-    - Features: Natural language to Prolog rule generation, timeline reasoning, goal tracking.
-    - Cool twist: Add a chatbot interface that answers questions using Prolog queries.
-- **Bioinformatics Reasoner**: Build a Prolog-based reasoning engine over biomedical ontologies (e.g., Gene Ontology, SNOMED CT).
-    - Use case: Infer gene-disease relationships or drug interactions.
-    - Integration: Use SPARQL to pull data from public bio-ontologies.
-- **Interactive Digital Logic Simulator with Prolog Backend**: A web-based tool where users can draw digital circuits (AND, OR, NOT, XOR, etc.), and the logic is evaluated using Prolog rules.
-    - Frontend: Drag-and-drop circuit builder (e.g., using SVG or canvas).
-    - Backend: Prolog engine that evaluates the circuit logic and propagates signals.
-    - Features: Step-by-step signal propagation, Truth table generation, Circuit minimization suggestions, Export to Verilog or VHDL
+Each tool includes:
+- Comprehensive documentation in `docs/`
+- Working examples in `examples/`
+- Test suites in `tests/`
+- Quick start scripts for immediate testing
+
+Run `./test_all.sh` from the root directory to test all tools at once.
 
 ## License
 
