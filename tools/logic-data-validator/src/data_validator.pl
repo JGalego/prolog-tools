@@ -5,6 +5,7 @@
     add_rule/2,             % add_rule(+RuleName, +Rule)
     remove_rule/1,          % remove_rule(+RuleName)
     list_rules/0,           % list_rules
+    get_rules/1,            % get_rules(-Rules)
     validate_fact/2,        % validate_fact(+Fact, +Rules)
     batch_validate/3,       % batch_validate(+DataList, +Rules, -AllViolations)
     generate_report/2       % generate_report(+Violations, +Format)
@@ -103,13 +104,21 @@ list_rules :-
     forall(validation_rule(Name, Rule),
            format('Rule ~w: ~w~n', [Name, Rule])).
 
+%% get_rules(-Rules) is det.
+%
+%  Gets all current validation rules as a list.
+%
+get_rules(Rules) :-
+    findall(rule(Name, Body), validation_rule(Name, Body), Rules).
+
 %% generate_report(+Violations, +Format) is det.
 %
 %  Generates a report of violations in specified format.
 %
 generate_report(Violations, text) :-
     format('=== DATA VALIDATION REPORT ===~n'),
-    format('Total violations: ~w~n~n', [length(Violations)]),
+    length(Violations, VCount),
+    format('Total violations: ~w~n~n', [VCount]),
     forall(member(violation(Rule, Fact, Reason), Violations),
            format('VIOLATION: ~w~n  Fact: ~w~n  Reason: ~w~n~n', 
                   [Rule, Fact, Reason])).

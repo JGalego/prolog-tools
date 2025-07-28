@@ -23,7 +23,8 @@ example_basic_validation :-
     validate_data(Data, Rules, Violations),
     
     % Display results
-    format('Found ~w violations:~n', [length(Violations)]),
+    length(Violations, VCount),
+    format('Found ~w violations:~n', [VCount]),
     forall(member(V, Violations), format('  ~w~n', [V])).
 
 % Example 2: File-based validation
@@ -71,7 +72,7 @@ example_dynamic_rules :-
     
     % Validate with dynamic rules
     Data = [employee(1, 'John', 25000)],  % Below minimum
-    findall(rule(Name, Body), validation_rule(Name, Body), Rules),
+    get_rules(Rules),
     validate_data(Data, Rules, Violations),
     
     format('Violations with dynamic rules: ~w~n', [Violations]),
@@ -84,7 +85,7 @@ example_dynamic_rules :-
 date_before_today(Date) :-
     get_time(Now),
     format_time(atom(Today), '%Y-%m-%d', Now),
-    atom_codes(Today, TodayCodes),
+    atom_codes(Today, _TodayCodes),
     % Simplified date comparison for example
     Date @< date(2024,12,31).
 

@@ -318,11 +318,11 @@ find_redundant_gates(CircuitID, RedundantGates) :-
              is_redundant_gate(CircuitID, GateID, Type, Inputs, Output)),
             RedundantGates).
 
-is_redundant_gate(CircuitID, GateID, buffer, [Input], Output) :-
+is_redundant_gate(CircuitID, GateID, buffer, [_Input], _Output) :-
     % Buffer gates that don't affect the output
     \+ gate_affects_output(CircuitID, GateID).
 
-is_redundant_gate(CircuitID, GateID, and, Inputs, Output) :-
+is_redundant_gate(CircuitID, _GateID, and, Inputs, _Output) :-
     % AND gate with constant 1 input
     member(InputNode, Inputs),
     signal_value(CircuitID, InputNode, 1),
@@ -493,7 +493,7 @@ setup_web_handlers :-
     http_handler('/api/export', handle_export, [method(post)]),
     http_handler('/', serve_web_files, [prefix]).
 
-handle_create_circuit(Request) :-
+handle_create_circuit(_Request) :-
     create_circuit(CircuitID),
     reply_json_dict(_{circuit_id: CircuitID}).
 
@@ -623,7 +623,7 @@ find_timing_hazard(CircuitID, Hazard) :-
     has_static_hazard_condition(CircuitID, AndInputs, OrInputs),
     Hazard = static_1_hazard(AndGate, OrGate).
 
-has_static_hazard_condition(CircuitID, AndInputs, OrInputs) :-
+has_static_hazard_condition(_CircuitID, AndInputs, OrInputs) :-
     % Simplified hazard detection - check for potential race conditions
     member(Input, AndInputs),
     member(Input, OrInputs).
@@ -639,7 +639,7 @@ write_comma_separated(Stream, [Item|Rest], Indent) :-
     write_comma_separated(Stream, Rest, Indent).
 
 has_combinational_loop(CircuitID, Path) :-
-    gate(CircuitID, StartGate, _, _, StartOutput),
+    gate(CircuitID, _StartGate, _, _, StartOutput),
     find_loop_path(CircuitID, StartOutput, StartOutput, [StartOutput], Path).
 
 find_loop_path(_, Target, Target, Acc, Path) :-

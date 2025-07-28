@@ -126,7 +126,7 @@ infer_gene_disease(Gene, Disease, Evidence) :-
 infer_gene_disease(Gene, Disease, Evidence) :-
     % Ontological inference
     gene_annotation(Gene, GOTerm),
-    ontology_term(GOTerm, _, Definition, gene_ontology),
+    ontology_term(GOTerm, _, _Definition, gene_ontology),
     disease_annotation(Disease, RelatedGOTerm),
     ontological_similarity(GOTerm, RelatedGOTerm, Similarity),
     Similarity > 0.7,
@@ -220,18 +220,18 @@ protein_function_prediction(ProteinID, Functions) :-
             Functions).
 
 % Helper predicates for protein function prediction
-predict_protein_function(ProteinID, Gene, Structure, Function) :-
+predict_protein_function(ProteinID, _Gene, _Structure, Function) :-
     % Function prediction based on sequence homology
     protein_sequence_similarity(ProteinID, KnownProtein, Similarity),
     Similarity > 0.8,
     protein_function(KnownProtein, Function).
 
-predict_protein_function(ProteinID, Gene, Structure, Function) :-
+predict_protein_function(ProteinID, _Gene, _Structure, Function) :-
     % Function prediction based on domains
     protein_domain(ProteinID, Domain),
     domain_function(Domain, Function).
 
-predict_protein_function(ProteinID, Gene, Structure, Function) :-
+predict_protein_function(_ProteinID, Gene, _Structure, Function) :-
     % Function prediction based on gene annotation
     gene_annotation(Gene, GOTerm),
     go_molecular_function(GOTerm, Function).
@@ -458,7 +458,7 @@ analyze_protein_sequence(Sequence, Analysis) :-
 % Drug interaction prediction
 
 same_metabolic_pathway(Mechanism1, Mechanism2) :-
-    metabolic_pathway(Pathway, Enzymes),
+    metabolic_pathway(_Pathway, Enzymes),
     member(Enzyme1, Enzymes),
     member(Enzyme2, Enzymes),
     drug_enzyme_interaction(Mechanism1, Enzyme1),
@@ -559,7 +559,7 @@ format_sparql_query(Query, FormattedQuery) :-
     atom_concat('SELECT * WHERE { ', QueryAtom, Temp),
     atom_concat(Temp, ' }', FormattedQuery).
 
-execute_sparql_request(Endpoint, Query, Results) :-
+execute_sparql_request(_Endpoint, Query, Results) :-
     % Placeholder for actual SPARQL execution
     format('Executing SPARQL query: ~w~n', [Query]),
     Results = [].
@@ -611,7 +611,7 @@ export_to_rdf_file(File) :-
     open(File, write, Stream),
     write(Stream, '@prefix bio: <http://bio.example.org/> .\n'),
     write(Stream, '@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n\n'),
-    forall(gene_disease_association(Gene, Disease, Evidence, Confidence),
+    forall(gene_disease_association(Gene, Disease, _Evidence, _Confidence),
            format(Stream, 'bio:~w bio:associatedWith bio:~w .\n', [Gene, Disease])),
     close(Stream).
 
@@ -679,7 +679,7 @@ disease_associated_target(Disease, Target, Association) :-
     protein_target(Protein, Target),
     Association = gene_protein_target.
 
-calculate_repurposing_score(Drug, Disease, Target, Association, Score) :-
+calculate_repurposing_score(Drug, Disease, Target, _Association, Score) :-
     drug_target_affinity(Drug, Target, Affinity),
     disease_target_relevance(Disease, Target, Relevance),
     Score is Affinity * Relevance.
@@ -708,7 +708,7 @@ disease_annotation('OMIM:151623', 'GO:0008219').  % cell death
 
 % Utility predicates
 
-hypergeometric_test(K, N, M, PopSize, PValue) :-
+hypergeometric_test(K, _N, _M, _PopSize, PValue) :-
     % Simplified hypergeometric test
     PValue is exp(-K).  % Placeholder calculation
 
@@ -736,14 +736,14 @@ gc_base('C').
 
 find_orfs(Sequence, ORFs) :-
     % Simplified ORF finding
-    atom_length(Sequence, Length),
+    atom_length(Sequence, _Length),
     MinORFLength = 300,  % 100 amino acids
     findall(orf(Start, End, Frame),
             (between(1, 3, Frame),
              find_orf_in_frame(Sequence, Frame, Start, End, MinORFLength)),
             ORFs).
 
-find_orf_in_frame(Sequence, Frame, Start, End, MinLength) :-
+find_orf_in_frame(_Sequence, Frame, Start, End, MinLength) :-
     % Placeholder for actual ORF finding algorithm
     Start = Frame,
     End is Start + MinLength.
@@ -785,7 +785,7 @@ predict_secondary_structure(Sequence, Structure) :-
     NumSheets is Length // 30,
     Structure = secondary_structure(NumHelices, NumSheets).
 
-identify_domains(Sequence, Domains) :-
+identify_domains(_Sequence, Domains) :-
     % Placeholder for domain identification
     Domains = [domain(pfam001, 'Kinase domain', 50, 200)].
 

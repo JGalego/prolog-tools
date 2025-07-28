@@ -113,6 +113,9 @@ export_knowledge_graph(KG, rdf_xml, OutputFile) :-
 export_knowledge_graph(KG, prolog, OutputFile) :-
     export_to_prolog(KG, OutputFile).
 
+export_knowledge_graph(KG, json, OutputFile) :-
+    export_to_json(KG, OutputFile).
+
 export_knowledge_graph(KG, json_ld, OutputFile) :-
     export_to_json_ld(KG, OutputFile).
 
@@ -125,7 +128,7 @@ export_knowledge_graph(KG, graphml, OutputFile) :-
 %
 query_knowledge_graph(Query, Results) :-
     process_semantic_query(Query, PrologQuery),
-    findall(Result, call(PrologQuery), Results).
+    findall(_Result, call(PrologQuery), Results).
 
 %% add_reasoning_rules(+Rules) is det.
 %
@@ -231,7 +234,7 @@ normalize_predicate(Prop, Predicate) :-
     atom_concat(Base, '_id', Prop),
     atom_concat('related_to_', Base, Predicate).
 
-apply_reasoning_rules(Facts, Relationships, InferredFacts) :-
+apply_reasoning_rules(_Facts, _Relationships, InferredFacts) :-
     findall(NewFact,
             (reasoning_rule(_, Rule),
              call(Rule),
@@ -263,6 +266,56 @@ export_to_json_ld(kg(Facts, Relationships, _), OutputFile) :-
     open(OutputFile, write, Stream),
     facts_to_json_ld(Facts, Relationships, JsonLD),
     write_canonical(Stream, JsonLD),
+    close(Stream).
+
+export_to_json(kg(Facts, Relationships, _), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write(Stream, '{\n  "entities": [\n'),
+    write_json_entities(Stream, Facts),
+    write(Stream, '\n  ],\n  "relationships": [\n'),
+    write_json_relationships(Stream, Relationships),
+    write(Stream, '\n  ]\n}'),
+    close(Stream).
+
+export_to_json(kg(Facts, Relationships), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write(Stream, '{\n  "entities": [\n'),
+    write_json_entities(Stream, Facts),
+    write(Stream, '\n  ],\n  "relationships": [\n'),
+    write_json_relationships(Stream, Relationships),
+    write(Stream, '\n  ]\n}'),
+    close(Stream).
+
+export_to_rdf_xml(kg(Facts, Relationships, _), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write_rdf_xml_header(Stream),
+    write_rdf_xml_facts(Stream, Facts),
+    write_rdf_xml_relationships(Stream, Relationships),
+    write_rdf_xml_footer(Stream),
+    close(Stream).
+
+export_to_rdf_xml(kg(Facts, Relationships), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write_rdf_xml_header(Stream),
+    write_rdf_xml_facts(Stream, Facts),
+    write_rdf_xml_relationships(Stream, Relationships),
+    write_rdf_xml_footer(Stream),
+    close(Stream).
+
+export_to_graphml(kg(Facts, Relationships, _), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write_graphml_header(Stream),
+    write_graphml_nodes(Stream, Facts),
+    write_graphml_edges(Stream, Relationships),
+    write_graphml_footer(Stream),
+    close(Stream).
+
+export_to_graphml(kg(Facts, Relationships), OutputFile) :-
+    open(OutputFile, write, Stream),
+    write_graphml_header(Stream),
+    write_graphml_nodes(Stream, Facts),
+    write_graphml_edges(Stream, Relationships),
+    write_graphml_footer(Stream),
     close(Stream).
 
 % Graph analysis helpers
@@ -317,7 +370,7 @@ load_csv_data(File, Data) :-
 
 convert_csv_row(Columns, Row, table_data(data, [ConvertedRow])) :-
     Row =.. [_|Values],
-    pairs_keys_values(Pairs, Columns, Values),
+    pairs_keys_values(_Pairs, Columns, Values),
     ConvertedRow =.. [row|Values].
 
 load_json_data(File, Data) :-
@@ -585,3 +638,61 @@ domain_entity_type(business, person).
 domain_entity_type(science, technology).
 domain_entity_type(medical, person).
 domain_entity_type(medical, organization).
+
+% Additional helper functions for export formats
+
+write_rdf_xml_header(Stream) :-
+    format(Stream, '<?xml version="1.0"?>~n<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">~n', []).
+
+write_rdf_xml_facts(Stream, Facts) :-
+    forall(member(entity(ID, Type, _Props), Facts),
+           format(Stream, '  <rdf:Description rdf:about="~w">~n    <rdf:type>~w</rdf:type>~n  </rdf:Description>~n', [ID, Type])).
+
+write_rdf_xml_relationships(Stream, Relationships) :-
+    forall(member(relationship(_ID, Subject, Predicate, Object), Relationships),
+           format(Stream, '  <rdf:Description rdf:about="~w">~n    <~w>~w</~w>~n  </rdf:Description>~n', [Subject, Predicate, Object, Predicate])).
+
+write_rdf_xml_footer(Stream) :-
+    format(Stream, '</rdf:RDF>~n', []).
+
+write_graphml_header(Stream) :-
+    format(Stream, '<?xml version="1.0" encoding="UTF-8"?>~n<graphml xmlns="http://graphml.graphdrawing.org/xmlns">~n  <graph id="G" edgedefault="directed">~n', []).
+
+write_graphml_nodes(Stream, Facts) :-
+    forall(member(entity(ID, Type, _), Facts),
+           format(Stream, '    <node id="~w"><data key="type">~w</data></node>~n', [ID, Type])).
+
+write_graphml_edges(Stream, Relationships) :-
+    forall(member(relationship(_, Subject, Predicate, Object), Relationships),
+           format(Stream, '    <edge source="~w" target="~w"><data key="label">~w</data></edge>~n', [Subject, Object, Predicate])).
+
+write_graphml_footer(Stream) :-
+    format(Stream, '  </graph>~n</graphml>~n', []).
+
+% JSON conversion helpers
+
+write_json_entities(_, []).
+write_json_entities(Stream, [Entity]) :-
+    write_json_entity(Stream, Entity).
+write_json_entities(Stream, [Entity|Rest]) :-
+    write_json_entity(Stream, Entity),
+    write(Stream, ',\n'),
+    write_json_entities(Stream, Rest).
+
+write_json_entity(Stream, entity(ID, Type)) :-
+    format(Stream, '    {"id": "~w", "type": "~w"}', [ID, Type]).
+write_json_entity(Stream, entity(ID, Type, _Props)) :-
+    format(Stream, '    {"id": "~w", "type": "~w"}', [ID, Type]).
+
+write_json_relationships(_, []).
+write_json_relationships(Stream, [Rel]) :-
+    write_json_relationship(Stream, Rel).
+write_json_relationships(Stream, [Rel|Rest]) :-
+    write_json_relationship(Stream, Rel),
+    write(Stream, ',\n'),
+    write_json_relationships(Stream, Rest).
+
+write_json_relationship(Stream, relationship(Subject, Predicate, Object)) :-
+    format(Stream, '    {"subject": "~w", "predicate": "~w", "object": "~w"}', [Subject, Predicate, Object]).
+write_json_relationship(Stream, relationship(_ID, Subject, Predicate, Object)) :-
+    format(Stream, '    {"subject": "~w", "predicate": "~w", "object": "~w"}', [Subject, Predicate, Object]).

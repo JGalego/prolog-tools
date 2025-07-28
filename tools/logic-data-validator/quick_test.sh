@@ -22,7 +22,8 @@ swipl -g "
     Data1 = [person(1, 'John', 25), person(2, 'Jane', -5)],
     Rules1 = [rule(age_positive, forall(data_fact(person(_, _, Age)), Age > 0))],
     validate_data(Data1, Rules1, V1),
-    format('Violations found: ~w~n', [length(V1)]),
+    length(V1, C1),
+    format('Violations found: ~w~n', [C1]),
     
     % Test 2: Multiple rules
     write('Test 2: Multiple rules'), nl,
@@ -31,7 +32,8 @@ swipl -g "
         rule(age_reasonable, forall(data_fact(person(_, _, Age)), Age < 150))
     ],
     validate_data(Data1, Rules2, V2),
-    format('Violations found: ~w~n', [length(V2)]),
+    length(V2, C2),
+    format('Violations found: ~w~n', [C2]),
     
     % Test 3: Dynamic rules
     write('Test 3: Dynamic rules'), nl,

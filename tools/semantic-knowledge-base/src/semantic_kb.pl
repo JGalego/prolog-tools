@@ -40,6 +40,23 @@ and chatbot interface.
 :- dynamic insight/3.           % insight(ID, Type, Content)
 :- dynamic kb_metadata/2.       % kb_metadata(Key, Value)
 
+% Discontiguous predicates - clauses are spread throughout the file
+:- discontiguous search_semantic/2.
+:- discontiguous query_notes/2.
+:- discontiguous goal_tracking/2.
+:- discontiguous natural_language_query/2.
+:- discontiguous export_knowledge_base/2.
+:- discontiguous export_to_json/1.
+:- discontiguous generate_insights/1.
+:- discontiguous extract_links_from_content/2.
+:- discontiguous extract_dates_from_content/2.
+:- discontiguous analyze_content_topics/2.
+:- discontiguous note_id_from_title/2.
+:- discontiguous create_topic_connections/2.
+:- discontiguous identify_entities/2.
+:- discontiguous create_entity_relationships/2.
+:- discontiguous expand_search_terms/2.
+
 %% add_note(+ID, +Content, +Metadata) is det.
 %
 %  Adds a new note to the knowledge base.
@@ -197,7 +214,7 @@ import_external_data(roam_export(File), json) :-
 
 % Helper predicates
 
-process_note_content(ID, Content, Metadata) :-
+process_note_content(ID, Content, _Metadata) :-
     extract_tags_from_content(Content, Tags),
     extract_links_from_content(Content, Links),
     extract_dates_from_content(Content, Dates),
@@ -205,7 +222,7 @@ process_note_content(ID, Content, Metadata) :-
     process_extracted_links(ID, Links),
     process_extracted_dates(ID, Dates).
 
-update_knowledge_graph(ID, Content, Metadata) :-
+update_knowledge_graph(ID, Content, _Metadata) :-
     % Create semantic connections based on content analysis
     analyze_content_topics(Content, Topics),
     create_topic_connections(ID, Topics),
@@ -214,7 +231,7 @@ update_knowledge_graph(ID, Content, Metadata) :-
 
 extract_tags_from_content(Content, Tags) :-
     findall(Tag,
-            (sub_atom(Content, Before, Len, After, TagMatch),
+            (sub_atom(Content, _Before, _Len, _After, TagMatch),
              sub_atom(TagMatch, 0, 1, _, '#'),
              sub_atom(TagMatch, 1, _, 0, Tag),
              \+ sub_atom(Tag, _, _, _, ' ')),
@@ -250,6 +267,29 @@ process_extracted_dates(ID, Dates) :-
     forall(member(Date, Dates),
            assertz(note_tag(ID, date(Date)))).
 
+% Helper predicates for semantic search
+expand_search_terms(Terms, ExpandedTerms) :-
+    % Simple implementation - just return the terms as-is
+    ExpandedTerms = Terms.
+
+semantic_match(Content, _Meta, Terms) :-
+    % Simple implementation - check if any term appears in content
+    member(Term, Terms),
+    downcase_atom(Content, LowerContent),
+    downcase_atom(Term, LowerTerm),
+    sub_atom(LowerContent, _, _, _, LowerTerm).
+
+% Helper predicates for content extraction
+extract_links_from_content(_Content, []).
+extract_dates_from_content(_Content, []).
+note_id_from_title(_Title, _ID) :- fail.
+
+% Helper predicates for analysis
+analyze_content_topics(_Content, []).
+create_topic_connections(_ID, _Topics).
+identify_entities(_Content, []).
+create_entity_relationships(_ID, _Entities).
+
 generate_single_insight(insight(InsightID, Type, Content)) :-
     uuid(InsightID),
     insight_type(Type),
@@ -265,9 +305,11 @@ generate_insight_content(tag_clusters, Content) :-
             (note_tag(_, Tag),
              aggregate_all(count, note_tag(_, Tag), Count)),
             TagCounts),
-    sort(2, @>=, TagCounts, SortedTags),
-    take(10, SortedTags, TopTags),
-    format_atom(Content, 'Most used tags: ~w', [TopTags]).
+    (TagCounts = [] ->
+        Content = 'No tags found' ;
+        (sort(2, @>=, TagCounts, SortedTags),
+         take(10, SortedTags, TopTags),
+         format_atom('Most used tags: ~w', [TopTags], Content))).
 
 generate_insight_content(temporal_patterns, Content) :-
     findall(Date-Count,
@@ -277,8 +319,16 @@ generate_insight_content(temporal_patterns, Content) :-
                           (note(_, _, _, T),
                            format_time(atom(Date), '%Y-%m-%d', T)), Count)),
             DateCounts),
-    analyze_writing_patterns(DateCounts, Pattern),
-    format_atom(Content, 'Writing pattern: ~w', [Pattern]).
+    (DateCounts = [] ->
+        Content = 'No temporal patterns found' ;
+        (analyze_writing_patterns(DateCounts, Pattern),
+         format_atom('Writing pattern: ~w', [Pattern], Content))).
+
+generate_insight_content(goal_dependencies, Content) :-
+    Content = 'Goal dependency analysis not yet implemented'.
+
+generate_insight_content(knowledge_gaps, Content) :-
+    Content = 'Knowledge gap analysis not yet implemented'.
 
 % Natural language processing
 
@@ -495,7 +545,7 @@ extract_obsidian_metadata(Content, Metadata, NoteContent) :-
 
 split_frontmatter(Content, Metadata, NoteContent) :-
     sub_atom(Content, 3, _, _, RestContent),
-    sub_atom(RestContent, Before, 3, After, '---'),
+    sub_atom(RestContent, Before, 3, _After, '---'),
     sub_atom(RestContent, 0, Before, _, FrontMatter),
     Plus3 is Before + 3,
     sub_atom(RestContent, Plus3, _, 0, NoteContent),
@@ -608,9 +658,9 @@ goal_tracking(GoalID, Progress) :-
     ).
 
 calculate_goal_progress(GoalID, Description, Deadline, Status, Progress) :-
-    findall(Task, task(_, _, _, _, _), AllTasks),
+    findall(_Task, task(_, _, _, _, _), AllTasks),
     length(AllTasks, TotalTasks),
-    findall(CompletedTask, task(_, _, _, completed, _), CompletedTasks),
+    findall(_CompletedTask, task(_, _, _, completed, _), CompletedTasks),
     length(CompletedTasks, CompletedCount),
     (   TotalTasks > 0
     ->  ProgressPercent is (CompletedCount * 100) // TotalTasks
@@ -674,7 +724,7 @@ execute_nl_query(search_query(Terms), Answer) :-
 execute_nl_query(show_query(recent), Answer) :-
     get_time(Now),
     WeekAgo is Now - 604800,
-    findall(Note, 
+    findall(_Note, 
             (note(_, _, _, Timestamp), Timestamp > WeekAgo),
             RecentNotes),
     length(RecentNotes, Count),
@@ -722,9 +772,9 @@ write_json_links(Stream, [link(Note1, Note2, LinkType)|Rest]) :-
 
 % Insights generation with better implementation
 generate_insights(Insights) :-
-    analyze_note_patterns(NotePatterns),
-    analyze_tag_frequency(TagFrequency), 
-    analyze_learning_trends(LearningTrends),
+    catch(analyze_note_patterns(NotePatterns), _, NotePatterns = []),
+    catch(analyze_tag_frequency(TagFrequency), _, TagFrequency = []), 
+    catch(analyze_learning_trends(LearningTrends), _, LearningTrends = []),
     Insights = [
         insight(note_patterns, NotePatterns),
         insight(tag_frequency, TagFrequency),
@@ -733,16 +783,36 @@ generate_insights(Insights) :-
 
 analyze_note_patterns(Patterns) :-
     findall(Date-Count,
-            (bagof(ID, Content^Metadata^Timestamp^note(ID, Content, Metadata, Timestamp), IDs),
+            (findall(ID, note(ID, _, _, _), IDs),
              length(IDs, Count),
+             Count > 0,
              get_time(Now),
              format_time(atom(Date), '%Y-%m-%d', Now)),
-            Patterns).
+            TempPatterns),
+    (TempPatterns = [] -> 
+        Patterns = [today-0] ;
+        Patterns = TempPatterns).
 
 analyze_tag_frequency(TagFreq) :-
     findall(Tag, note_tag(_, Tag), AllTags),
-    msort(AllTags, SortedTags),
-    group_pairs_by_key([Tag-1 | SortedTags], TagFreq).
+    (AllTags = [] -> 
+        TagFreq = [] ;
+        (msort(AllTags, SortedTags),
+         simple_count_tags(SortedTags, TagFreq))).
+
+% Simple tag counting helper
+simple_count_tags([], []).
+simple_count_tags([Tag|Tags], [Tag-Count|Rest]) :-
+    count_occurrences(Tag, [Tag|Tags], Count, Remaining),
+    simple_count_tags(Remaining, Rest).
+
+count_occurrences(_, [], 0, []).
+count_occurrences(Tag, [Tag|Rest], Count, Remaining) :-
+    count_occurrences(Tag, Rest, RestCount, Remaining),
+    Count is RestCount + 1.
+count_occurrences(Tag, [Other|Rest], Count, [Other|Remaining]) :-
+    Tag \= Other,
+    count_occurrences(Tag, Rest, Count, Remaining).
 
 analyze_learning_trends(Trends) :-
     findall(learning_note(ID),
