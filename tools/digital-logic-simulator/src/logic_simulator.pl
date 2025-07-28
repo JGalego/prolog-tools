@@ -123,8 +123,9 @@ generate_truth_table(CircuitID, TruthTable) :-
     findall(OutputName, output_node(CircuitID, OutputName), OutputNames),
     length(InputNames, NumInputs),
     NumRows is 2^NumInputs,
+    MaxIndex is NumRows - 1,
     findall(row(InputValues, OutputValues),
-            (between(0, NumRows-1, I),
+            (between(0, MaxIndex, I),
              number_to_binary_list(I, NumInputs, InputValues),
              set_input_values(CircuitID, InputNames, InputValues),
              simulate_circuit(CircuitID, OutputValues)),
@@ -220,11 +221,11 @@ propagate_signals(CircuitID) :-
             gate(CircuitID, GateID, Type, Inputs, Output),
             Gates),
     (propagate_gate_signals(CircuitID, Gates, Changed) ->
-        (Changed = true ->
-            fail ;  % Continue propagation
-            true    % Stable state reached
+        (Changed = false ->
+            ! ;  % Cut to stop the repeat when stable
+            fail    % Continue propagation when changed
         ) ;
-        true
+        !  % Cut if propagate_gate_signals fails
     ).
 
 propagate_gate_signals(_, [], false).
@@ -232,11 +233,12 @@ propagate_gate_signals(CircuitID, [gate(CircuitID, _, Type, Inputs, Output)|Rest
     get_input_values(CircuitID, Inputs, InputValues),
     evaluate_gate(Type, InputValues, NewValue),
     signal_value(CircuitID, Output, CurrentValue),
+    propagate_gate_signals(CircuitID, Rest, RestChanged),
     (NewValue \= CurrentValue ->
         retract(signal_value(CircuitID, Output, CurrentValue)),
         assertz(signal_value(CircuitID, Output, NewValue)),
         Changed = true ;
-        propagate_gate_signals(CircuitID, Rest, Changed)
+        Changed = RestChanged
     ).
 
 get_input_values(_, [], []).
@@ -574,7 +576,13 @@ find_critical_path(CircuitID, CriticalPath) :-
              find_path(CircuitID, Input, Output, Path),
              calculate_path_delay(CircuitID, Path, TotalDelay)),
             AllPaths),
-    max_member(path(CriticalPath, _), AllPaths).
+    (AllPaths = [] ->
+        CriticalPath = [] ;
+        (AllPaths = [path(FirstPath, _)|_] ->
+            CriticalPath = FirstPath ;
+            CriticalPath = []
+        )
+    ).
 
 find_path(CircuitID, Start, End, Path) :-
     find_path_helper(CircuitID, Start, End, [Start], Path).
@@ -596,6 +604,14 @@ calculate_path_delay(CircuitID, Path, TotalDelay) :-
              gate_delay(Type, Delay)),
             Delays),
     sum_list(Delays, TotalDelay).
+
+calculate_maximum_frequency(CircuitID, MaxFreq) :-
+    find_critical_path(CircuitID, CriticalPath),
+    calculate_path_delay(CircuitID, CriticalPath, CriticalDelay),
+    (CriticalDelay > 0 ->
+        MaxFreq is 1.0 / (CriticalDelay * 1e-9) ;  % Assuming delays in ns
+        MaxFreq = 'undefined'
+    ).
 
 % Hazard detection
 
